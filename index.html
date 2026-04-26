@@ -1,77 +1,193 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html>
+<html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Syllabus Tracker Stable</title>
+<title>Syllabus Tracker</title>
+
 <style>
-body{font-family:sans-serif;background:#f5f6fa;margin:0;padding:10px}
-.card{background:#fff;padding:10px;margin-bottom:10px;border-radius:10px}
-button{padding:6px 10px;margin:2px}
-.progress{height:6px;background:#ddd;border-radius:10px}
-.bar{height:6px;background:#4f46e5}
-.topic{display:flex;justify-content:space-between;margin:4px 0}
-.hidden{display:none}
-.rev{background:#fde68a}
+:root{
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --accent:#6366f1;
+  --soft:#e0e7ff;
+  --text:#1e293b;
+  --muted:#64748b;
+}
+
+body{
+  margin:0;
+  font-family:system-ui;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.container{
+  max-width:500px;
+  margin:auto;
+  padding:15px;
+}
+
+h2{
+  margin-bottom:10px;
+}
+
+.card{
+  background:var(--card);
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+input{
+  flex:1;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #ddd;
+}
+
+button{
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  background:var(--accent);
+  color:white;
+  cursor:pointer;
+}
+
+.small-btn{
+  background:#e2e8f0;
+  color:#000;
+}
+
+.progress{
+  height:6px;
+  background:#e2e8f0;
+  border-radius:10px;
+  margin-top:6px;
+}
+
+.bar{
+  height:6px;
+  background:var(--accent);
+  border-radius:10px;
+}
+
+.topic{
+  display:flex;
+  justify-content:space-between;
+  padding:4px 0;
+  font-size:14px;
+}
+
+.fade{
+  opacity:0.5;
+  text-decoration:line-through;
+}
+
+.rev{
+  background:#fde68a;
+  border-radius:6px;
+  padding:2px 6px;
+}
+
+.hidden{
+  display:none;
+}
+
+.rev-item{
+  background:var(--soft);
+  padding:8px;
+  border-radius:10px;
+  margin:6px 0;
+}
 </style>
 </head>
-<body><h3>Tracker</h3><div class="card">
+
+<body>
+
+<div class="container">
+
+<h2>📊 Syllabus Tracker</h2>
+
+<div class="card">
 Progress: <span id="p">0%</span>
 <div class="progress"><div id="bar" class="bar"></div></div>
-</div><div class="card">
-<button onclick="toggleRevPanel()">Revision</button>
-<button onclick="closeAll()">Close all</button>
-</div><div id="revPanel" class="card hidden"></div><div class="card">
+</div>
+
+<div class="card">
+<button onclick="toggleRev()">Revision</button>
+<button class="small-btn" onclick="closeAll()">Close all</button>
+</div>
+
+<div id="revPanel" class="card hidden"></div>
+
+<div class="card row">
 <input id="subInput" placeholder="Add subject">
 <button onclick="addSub()">Add</button>
-</div><div id="root"></div><script>
+</div>
+
+<div id="root"></div>
+
+</div>
+
+<script>
+
 let data = JSON.parse(localStorage.getItem('data')) || [];
 
 function save(){
- localStorage.setItem('data', JSON.stringify(data));
- render();
+  localStorage.setItem('data', JSON.stringify(data));
+  render();
 }
 
 function addSub(){
- let v=document.getElementById('subInput').value.trim();
- if(!v) return;
- data.push({name:v,open:false,chapters:[]});
- document.getElementById('subInput').value='';
- save();
+  let v=document.getElementById('subInput').value.trim();
+  if(!v) return;
+  data.push({name:v,open:false,chapters:[]});
+  document.getElementById('subInput').value='';
+  save();
 }
 
 function toggleSub(i){
- data[i].open=!data[i].open;
- save();
+  data[i].open=!data[i].open;
+  save();
 }
 
 function closeAll(){
- data.forEach(s=>s.open=false);
- save();
+  data.forEach(s=>s.open=false);
+  save();
 }
 
 function addChap(i){
- let v=prompt('Chapter');
- if(!v) return;
- data[i].chapters.push({name:v,topics:[]});
- save();
+  let v=prompt('Chapter name');
+  if(!v) return;
+  data[i].chapters.push({name:v,topics:[]});
+  save();
 }
 
 function addTop(i,j){
- let v=prompt('Topic');
- if(!v) return;
- data[i].chapters[j].topics.push({name:v,done:false,rev:false});
- save();
+  let v=prompt('Topic name');
+  if(!v) return;
+  data[i].chapters[j].topics.push({name:v,done:false,rev:false});
+  save();
 }
 
 function toggleDone(i,j,k){
- let t=data[i].chapters[j].topics[k];
- t.done=!t.done;
- save();
+  let t=data[i].chapters[j].topics[k];
+  t.done=!t.done;
+  save();
 }
 
 function toggleRev(i,j,k){
- let t=data[i].chapters[j].topics[k];
- t.rev=!t.rev;
- save();
+  let t=data[i].chapters[j].topics[k];
+  t.rev=!t.rev;
+  save();
 }
 
 function delSub(i){ data.splice(i,1); save(); }
@@ -79,100 +195,109 @@ function delChap(i,j){ data[i].chapters.splice(j,1); save(); }
 function delTop(i,j,k){ data[i].chapters[j].topics.splice(k,1); save(); }
 
 function prog(){
- let tot=0,done=0;
- data.forEach(s=>s.chapters.forEach(c=>c.topics.forEach(t=>{tot++; if(t.done) done++;})));
- return tot?Math.round(done/tot*100):0;
+  let tot=0,done=0;
+  data.forEach(s=>s.chapters.forEach(c=>c.topics.forEach(t=>{
+    tot++; if(t.done) done++;
+  })));
+  return tot?Math.round(done/tot*100):0;
 }
 
-function toggleRevPanel(){
- document.getElementById('revPanel').classList.toggle('hidden');
+function toggleRev(){
+  document.getElementById('revPanel').classList.toggle('hidden');
 }
 
 function renderRev(){
- let p=document.getElementById('revPanel');
- p.innerHTML='';
- let any=false;
- data.forEach(s=>{
-  s.chapters.forEach(c=>{
-   c.topics.forEach(t=>{
-    if(t.rev){
-     any=true;
-     let d=document.createElement('div');
-     d.className='card';
-     d.innerText=s.name+' > '+c.name+' > '+t.name;
-     p.appendChild(d);
-    }
-   });
+  let p=document.getElementById('revPanel');
+  p.innerHTML='';
+  let any=false;
+
+  data.forEach(s=>{
+    s.chapters.forEach(c=>{
+      c.topics.forEach(t=>{
+        if(t.rev){
+          any=true;
+          let d=document.createElement('div');
+          d.className='rev-item';
+          d.innerHTML="<b>"+s.name+"</b><br>"+c.name+" → "+t.name;
+          p.appendChild(d);
+        }
+      });
+    });
   });
- });
- if(!any) p.innerHTML='No revision topics';
+
+  if(!any) p.innerHTML="No revision topics";
 }
 
 function render(){
- document.getElementById('p').innerText=prog()+'%';
- document.getElementById('bar').style.width=prog()+'%';
- renderRev();
+  document.getElementById('p').innerText=prog()+"%";
+  document.getElementById('bar').style.width=prog()+"%";
 
- let root=document.getElementById('root');
- root.innerHTML='';
+  renderRev();
 
- data.forEach((s,i)=>{
-  let d=document.createElement('div');
-  d.className='card';
+  let root=document.getElementById('root');
+  root.innerHTML='';
 
-  let head=document.createElement('div');
-  head.innerHTML=(s.open?'▼ ':'▶ ')+s.name;
-  head.onclick=function(){toggleSub(i)};
+  data.forEach((s,i)=>{
+    let d=document.createElement('div');
+    d.className='card';
 
-  let controls=document.createElement('div');
-  controls.innerHTML='<button onclick="addChap('+i+')">+</button><button onclick="delSub('+i+')">🗑</button>';
+    let p=prog();
 
-  let row=document.createElement('div');
-  row.style.display='flex';
-  row.style.justifyContent='space-between';
-  row.appendChild(head);
-  row.appendChild(controls);
+    d.innerHTML=`
+      <div class="row">
+        <span onclick="toggleSub(${i})" style="cursor:pointer">
+          ${s.open?'▼':'▶'} ${s.name}
+        </span>
+        <div>
+          <button onclick="addChap(${i})">+</button>
+          <button class="small-btn" onclick="delSub(${i})">🗑</button>
+        </div>
+      </div>
+    `;
 
-  d.appendChild(row);
+    if(s.open){
+      s.chapters.forEach((c,j)=>{
+        let cd=document.createElement('div');
 
-  let bar=document.createElement('div');
-  bar.className='progress';
-  let b=document.createElement('div');
-  b.className='bar';
-  b.style.width=prog()+'%';
-  bar.appendChild(b);
-  d.appendChild(bar);
+        cd.innerHTML=`
+          <div class="row" style="margin-top:6px">
+            <small>${c.name}</small>
+            <div>
+              <button onclick="addTop(${i},${j})">+</button>
+              <button class="small-btn" onclick="delChap(${i},${j})">🗑</button>
+            </div>
+          </div>
+        `;
 
-  if(s.open){
-   s.chapters.forEach((c,j)=>{
-    let cd=document.createElement('div');
-    cd.innerHTML=c.name+' <button onclick="addTop('+i+','+j+')">+</button> <button onclick="delChap('+i+','+j+')">🗑</button>';
+        c.topics.forEach((t,k)=>{
+          let td=document.createElement('div');
+          td.className='topic';
 
-    c.topics.forEach((t,k)=>{
-     let td=document.createElement('div');
-     td.className='topic';
+          td.innerHTML=`
+            <label class="${t.done?'fade':''}">
+              <input type="checkbox" ${t.done?'checked':''}
+              onchange="toggleDone(${i},${j},${k})"> ${t.name}
+            </label>
+            <div>
+              <button class="${t.rev?'rev':''}" onclick="toggleRev(${i},${j},${k})">R</button>
+              <button class="small-btn" onclick="delTop(${i},${j},${k})">🗑</button>
+            </div>
+          `;
 
-     let left=document.createElement('span');
-     left.innerHTML='<input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleDone('+i+','+j+','+k+')"> '+t.name;
-     if(t.done) left.style.textDecoration='line-through';
+          cd.appendChild(td);
+        });
 
-     let right=document.createElement('span');
-     right.innerHTML='<button onclick="toggleRev('+i+','+j+','+k+')">R</button> <button onclick="delTop('+i+','+j+','+k+')">🗑</button>';
-     if(t.rev) td.classList.add('rev');
+        d.appendChild(cd);
+      });
+    }
 
-     td.appendChild(left);
-     td.appendChild(right);
-     cd.appendChild(td);
-    });
-
-    d.appendChild(cd);
-   });
-  }
-
-  root.appendChild(d);
- });
+    root.appendChild(d);
+  });
 }
 
 render();
-</script></body>
+
+</script>
+
+</body>
 </html>
