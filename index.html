@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syllabus Tracker</title>
+
+<style>
+:root{
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --accent:#6366f1;
+  --soft:#e0e7ff;
+  --text:#1e293b;
+}
+
+body{
+  margin:0;
+  font-family:system-ui;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.container{
+  max-width:500px;
+  margin:auto;
+  padding:15px;
+}
+
+.card{
+  background:var(--card);
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+input{
+  flex:1;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #ddd;
+}
+
+button{
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  background:var(--accent);
+  color:white;
+  cursor:pointer;
+}
+
+.small{
+  background:#e2e8f0;
+  color:black;
+}
+
+.progress{
+  height:6px;
+  background:#e2e8f0;
+  border-radius:10px;
+  margin-top:6px;
+}
+
+.bar{
+  height:6px;
+  background:var(--accent);
+}
+
+.topic{
+  display:flex;
+  justify-content:space-between;
+  padding:4px 0;
+}
+
+.fade{
+  text-decoration:line-through;
+  opacity:0.5;
+}
+
+.rev{
+  background:#fde68a;
+}
+
+.hidden{
+  display:none;
+}
+
+.rev-item{
+  background:var(--soft);
+  padding:8px;
+  border-radius:8px;
+  margin:5px 0;
+}
+
+.dashboard-card{
+  padding:10px;
+  border-radius:10px;
+  background:var(--soft);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📊 Tracker</h2>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="grid"></div>
+
+<div class="card">
+Progress: <span id="progressText">0%</span>
+<div class="progress"><div id="progressBar" class="bar"></div></div>
+</div>
+
+<div class="card">
+<button onclick="toggleRevisionPanel()">Revision</button>
+<button class="small" onclick="closeAll()">Close all</button>
+</div>
+
+<div id="revisionPanel" class="card hidden"></div>
+
+<div class="card row">
+<input id="subjectInput" placeholder="Add subject">
+<button onclick="addSubject()">Add</button>
+</div>
+
+<div id="root"></div>
+
+</div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("data")) || [];
+
+function save(){
+  localStorage.setItem("data", JSON.stringify(data));
+  render();
+}
+
+function addSubject(){
+  let input = document.getElementById("subjectInput");
+  let name = input.value.trim();
+  if(!name) return;
+
+  data.push({name:name,open:false,chapters:[]});
+  input.value="";
+  save();
+}
+
+function toggleSubject(i){
+  data[i].open = !data[i].open;
+  save();
+}
+
+function closeAll(){
+  data.forEach(s=>s.open=false);
+  save();
+}
+
+function addChapter(i){
+  let name = prompt("Chapter name");
+  if(!name) return;
+
+  data[i].chapters.push({name:name,topics:[]});
+  save();
+}
+
+function addTopic(i,j){
+  let name = prompt("Topic name");
+  if(!name) return;
+
+  data[i].chapters[j].topics.push({
+    name:name,
+    done:false,
+    rev:false
+  });
+
+  save();
+}
+
+function toggleDone(i,j,k){
+  data[i].chapters[j].topics[k].done = !data[i].chapters[j].topics[k].done;
+  save();
+}
+
+function toggleRevision(i,j,k){
+  data[i].chapters[j].topics[k].rev = !data[i].chapters[j].topics[k].rev;
+  save();
+}
+
+function delSubject(i){ data.splice(i,1); save(); }
+function delChapter(i,j){ data[i].chapters.splice(j,1); save(); }
+function delTopic(i,j,k){ data[i].chapters[j].topics.splice(k,1); save(); }
+
+function getProgress(){
+  let total=0, done=0;
+  data.forEach(s=>s.chapters.forEach(c=>c.topics.forEach(t=>{
+    total++;
+    if(t.done) done++;
+  })));
+  return total?Math.round((done/total)*100):0;
+}
+
+function getSubjectProgress(s){
+  let total=0, done=0;
+  s.chapters.forEach(c=>c.topics.forEach(t=>{
+    total++;
+    if(t.done) done++;
+  }));
+  return total?Math.round((done/total)*100):0;
+}
+
+function toggleRevisionPanel(){
+  document.getElementById("revisionPanel").classList.toggle("hidden");
+}
+
+function renderRevision(){
+  let panel = document.getElementById("revisionPanel");
+  panel.innerHTML="";
+  let found=false;
+
+  data.forEach(s=>{
+    s.chapters.forEach(c=>{
+      c.topics.forEach(t=>{
+        if(t.rev){
+          found=true;
+          let div=document.createElement("div");
+          div.className="rev-item";
+          div.innerHTML="<b>"+s.name+"</b><br>"+c.name+" → "+t.name;
+          panel.appendChild(div);
+        }
+      });
+    });
+  });
+
+  if(!found){
+    panel.innerHTML="No revision topics";
+  }
+}
+
+function renderDashboard(){
+  let dash=document.getElementById("dashboard");
+  dash.innerHTML="";
+
+  data.forEach(s=>{
+    let p=getSubjectProgress(s);
+
+    let d=document.createElement("div");
+    d.className="dashboard-card";
+
+    d.innerHTML=`
+      <b>${s.name}</b>
+      <div class="progress"><div class="bar" style="width:${p}%"></div></div>
+      <small>${p}%</small>
+    `;
+
+    dash.appendChild(d);
+  });
+}
+
+function render(){
+
+  let p=getProgress();
+
+  document.getElementById("progressText").innerText=p+"%";
+  document.getElementById("progressBar").style.width=p+"%";
+
+  renderRevision();
+  renderDashboard();
+
+  let root=document.getElementById("root");
+  root.innerHTML="";
+
+  data.forEach((s,i)=>{
+
+    let card=document.createElement("div");
+    card.className="card";
+
+    let sp=getSubjectProgress(s);
+
+    card.innerHTML=`
+      <div class="row">
+        <span onclick="toggleSubject(${i})" style="cursor:pointer">
+          ${s.open?"▼":"▶"} ${s.name}
+        </span>
+        <div>
+          <button onclick="addChapter(${i})">+</button>
+          <button class="small" onclick="delSubject(${i})">🗑</button>
+        </div>
+      </div>
+
+      <div class="progress">
+        <div class="bar" style="width:${sp}%"></div>
+      </div>
+
+      <small>${sp}%</small>
+    `;
+
+    if(s.open){
+      s.chapters.forEach((c,j)=>{
+
+        let cDiv=document.createElement("div");
+
+        cDiv.innerHTML=`
+          <div class="row" style="margin-top:6px">
+            <small>${c.name}</small>
+            <div>
+              <button onclick="addTopic(${i},${j})">+</button>
+              <button class="small" onclick="delChapter(${i},${j})">🗑</button>
+            </div>
+          </div>
+        `;
+
+        c.topics.forEach((t,k)=>{
+
+          let tDiv=document.createElement("div");
+          tDiv.className="topic";
+
+          tDiv.innerHTML=`
+            <label class="${t.done?"fade":""}">
+              <input type="checkbox"
+              ${t.done?"checked":""}
+              onchange="toggleDone(${i},${j},${k})">
+              ${t.name}
+            </label>
+
+            <div>
+              <button class="${t.rev?"rev":""}"
+              onclick="toggleRevision(${i},${j},${k})">R</button>
+
+              <button class="small"
+              onclick="delTopic(${i},${j},${k})">🗑</button>
+            </div>
+          `;
+
+          cDiv.appendChild(tDiv);
+        });
+
+        card.appendChild(cDiv);
+      });
+    }
+
+    root.appendChild(card);
+  });
+}
+
+render();
+
+</script>
+
+</body>
+</html>
